@@ -40,11 +40,15 @@ def forward_backward_prop(X, labels, params, dimensions):
 
     # Note: compute cost based on `sum` not `mean`.
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    z1 = X.dot(W1)+b1
+    a1 = sigmoid(z1)
+    z2 = a1.dot(W2)+b2
+    a2 = softmax(z2)
+    cost = -np.sum(np.log(a2)*labels, axis=1)
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    raise NotImplementedError
+    for x in cost 
     ### END YOUR CODE
 
     ### Stack gradients (do not modify)
