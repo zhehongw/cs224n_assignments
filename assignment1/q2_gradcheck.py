@@ -43,8 +43,8 @@ def gradcheck_naive(f, x):
         random.setstate(rndstate)
         x[ix] -= 2*h
         fxmh, gradx = f(x)
-        print fxmh
         numgrad = (fxph - fxmh) / (2 * h)
+        x[ix] += h
         ### END YOUR CODE
 
         # Compare gradients

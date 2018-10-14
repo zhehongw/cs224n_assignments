@@ -38,25 +38,25 @@ def forward_backward_prop(X, labels, params, dimensions):
     ofs += H * Dy
     b2 = np.reshape(params[ofs:ofs + Dy], (1, Dy))
     
+    # Note: compute cost based on `sum` not `mean`.
+    ### YOUR CODE HERE: forward propagation
     labels = labels.astype(int)
     reg = 1e-3
     #step_size = 1e0
     num_example = X.shape[0]
-    # Note: compute cost based on `sum` not `mean`.
-    ### YOUR CODE HERE: forward propagation
     z1 = X.dot(W1)+b1
     a1 = sigmoid(z1)
     z2 = a1.dot(W2)+b2
     y = softmax(z2)
-    correct_prob = -np.log(y[:, labels])
+    correct_prob = -np.log(y[labels == 1])
     data_loss = np.sum(correct_prob) / num_example 
-    reg_loss = 0.5*reg*sum(W1*W1) + 0.5*reg*np.sum(W2*W2)
+    reg_loss = 0.5*reg*np.sum(W1*W1) + 0.5*reg*np.sum(W2*W2)
     cost = data_loss + reg_loss 
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
     dz2 = y
-    dz2[:,labels] -= 1
+    dz2 -= labels   #labels are one hot code, so just minus is good
     dz2 = dz2 / num_example
     dw2 = a1.T.dot(dz2)
     db2 = np.sum(dz2, axis=0, keepdims=True)
@@ -108,7 +108,18 @@ def your_sanity_checks():
     """
     print "Running your sanity checks..."
     ### YOUR CODE HERE
-    #raise NotImplementedError
+    N = 100
+    dimensions = [2, 3, 2]
+    data = np.random.randn(N, dimensions[0])   # each row will be a data
+    labels = np.zeros((N, dimensions[2]))
+
+    for i in xrange(N):
+        labels[i, random.randint(0,dimensions[2]-1)] = 1
+
+    params = np.random.randn((dimensions[0] + 1) * dimensions[1] + (
+        dimensions[1] + 1) * dimensions[2], )
+    gradcheck_naive(lambda params:
+        forward_backward_prop(data, labels, params, dimensions), params)
     ### END YOUR CODE
 
 
