@@ -15,7 +15,10 @@ def normalizeRows(x):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    s = x*x
+    s = np.sum(s, axis=1, keepdims=True)
+    s = np.sqrt(s)
+    x = x / s
     ### END YOUR CODE
 
     return x
@@ -27,7 +30,7 @@ def test_normalize_rows():
     print x
     ans = np.array([[0.6,0.8],[0.4472136,0.89442719]])
     assert np.allclose(x, ans, rtol=1e-05, atol=1e-06)
-    print ""
+    print "Normalizeation succeed"
 
 
 def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
@@ -58,7 +61,13 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    product = predicted.dot(outputVectors)
+    sum = np.sum(product, axis=1, keepdims=True)
+    yhat = product / sum
+    cost = -np.log(yhat[1, target]
+    yhat[1, target] -= 1
+    gradPred = outputVectors.T.dot(yhat)
+    grad = yhat.dot(predicted.T)
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -96,7 +105,13 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     indices.extend(getNegativeSamples(target, dataset, K))
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    sub_sample = outputVectors[indices, :]
+    product = sub_sample.T.dot(predicted)
+    cost = -np.log( sigmoid(product[0]) - np.sum(np.log(sigmoid(-product[1:(K+2)])))
+    gradPred = (sigmoid(product[0]) - 1) * sub_sample[0, :] - np.sum((sigmoid(-product[1:(k+2)]) - 1) * sub_sample[1:(k+2), :], axis=0)
+    grad = np.zeros(outputVectors.shape)
+    grad[indices[1], :] = (sigmoid(product[0]) - 1) * predicted 
+    grad[indices[2:(K+2)], :] =  -(sigmoid(-product[1:(K+2)]) - 1) * predicted 
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -131,7 +146,8 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    for x in contextWords:
+        tempCost, tempGradIn, tempgGradOut = word2vecCostAndGradient(inputVectors[tokens[currentWord]], tokens[x], outputVectors, dataset)
     ### END YOUR CODE
 
     return cost, gradIn, gradOut

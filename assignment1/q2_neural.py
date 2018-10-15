@@ -62,7 +62,7 @@ def forward_backward_prop(X, labels, params, dimensions):
     db2 = np.sum(dz2, axis=0, keepdims=True)
     gradb2 = db2
     da1 = dz2.dot(W2.T)
-    dz1 = a1*(1-a1)*da1
+    dz1 = sigmoid_grad(a1)*da1
     dw1 = X.T.dot(dz1)
     db1 = np.sum(dz1, axis=0, keepdims=True)
     gradb1 = db1 
