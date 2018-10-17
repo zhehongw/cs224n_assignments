@@ -61,13 +61,20 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     """
 
     ### YOUR CODE HERE
-    product = predicted.dot(outputVectors)
-    sum = np.sum(product, axis=1, keepdims=True)
+    product = np.exp(predicted.dot(outputVectors.T))
+    sum = np.sum(product)
     yhat = product / sum
-    cost = -np.log(yhat[1, target]
-    yhat[1, target] -= 1
-    gradPred = outputVectors.T.dot(yhat)
-    grad = yhat.dot(predicted.T)
+    cost = -np.log(yhat[target])
+    yhat[target] -= 1
+    gradPred = yhat.dot(outputVectors)
+    assert gradPred.shape == predicted.shape
+
+    #transform into 2d array
+    yhat = np.array([yhat])
+    predicted = np.array([predicted])
+
+    grad = yhat.T.dot(predicted)
+    assert outputVectors.shape == grad.shape
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -103,15 +110,18 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     # wish to match the autograder and receive points!
     indices = [target]
     indices.extend(getNegativeSamples(target, dataset, K))
-
     ### YOUR CODE HERE
     sub_sample = outputVectors[indices, :]
-    product = sub_sample.T.dot(predicted)
-    cost = -np.log( sigmoid(product[0]) - np.sum(np.log(sigmoid(-product[1:(K+2)])))
-    gradPred = (sigmoid(product[0]) - 1) * sub_sample[0, :] - np.sum((sigmoid(-product[1:(k+2)]) - 1) * sub_sample[1:(k+2), :], axis=0)
+    product = predicted.dot(sub_sample.T)
+    cost = -np.log(sigmoid(product[0])) - np.sum(np.log(sigmoid(-product[1:(K+1)])))
+    gradPred = (sigmoid(product[0]) - 1) * sub_sample[0, :] - (sigmoid(-product[1:]) - 1).dot(sub_sample[1:, :])
+    assert gradPred.shape == predicted.shape
+
     grad = np.zeros(outputVectors.shape)
-    grad[indices[1], :] = (sigmoid(product[0]) - 1) * predicted 
-    grad[indices[2:(K+2)], :] =  -(sigmoid(-product[1:(K+2)]) - 1) * predicted 
+    grad[indices[0], :] = (sigmoid(product[0]) - 1) * predicted 
+    for x in range(1, K+1):
+        grad[indices[x], :] +=  (-(sigmoid(-product[x]) - 1)) * predicted
+    assert grad.shape == outputVectors.shape
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -147,7 +157,10 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
 
     ### YOUR CODE HERE
     for x in contextWords:
-        tempCost, tempGradIn, tempgGradOut = word2vecCostAndGradient(inputVectors[tokens[currentWord]], tokens[x], outputVectors, dataset)
+        tempCost, tempGradIn, tempGradOut = word2vecCostAndGradient(inputVectors[tokens[currentWord]], tokens[x], outputVectors, dataset)
+        cost += tempCost
+        gradOut += tempGradOut
+        gradIn[tokens[currentWord]] += tempGradIn
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -163,15 +176,17 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
 
     Extra credit: Implementing CBOW is optional, but the gradient
     derivations are not. If you decide not to implement CBOW, remove
-    the NotImplementedError.
+    the NotImplementedError.any
     """
 
     cost = 0.0
     gradIn = np.zeros(inputVectors.shape)
     gradOut = np.zeros(outputVectors.shape)
-
     ### YOUR CODE HERE
-    raise NotImplementedError
+    v = np.sum(inputVectors[[tokens[x] for x in contextWords], :], axis=0)
+    assert v.shape[0] == inputVectors.shape[1]
+    cost, tempGradIn, gradOut = word2vecCostAndGradient(v, tokens[currentWord], outputVectors, dataset)
+    gradIn[[tokens[x] for x in contextWords], :] = tempGradIn
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -189,7 +204,8 @@ def word2vec_sgd_wrapper(word2vecModel, tokens, wordVectors, dataset, C,
     N = wordVectors.shape[0]
     inputVectors = wordVectors[:N/2,:]
     outputVectors = wordVectors[N/2:,:]
-    for i in xrange(batchsize):
+    for i in xrange(1):
+    #for i in xrange(batchsize):
         C1 = random.randint(1,C)
         centerword, context = dataset.getRandomContext(C1)
 
