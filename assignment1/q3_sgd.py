@@ -86,7 +86,8 @@ def sgd(f, x0, step, iterations, postprocessing=None, useSaved=False,
         cost = None
         ### YOUR CODE HERE
         cost, grad = f(x)
-        x += -step * grad
+        assert grad.shape == x.shape
+        x -= step * grad
         x = postprocessing(x)
         ### END YOUR CODE
 
@@ -110,17 +111,17 @@ def sanity_check():
     quad = lambda x: (np.sum(x ** 2), x * 2)
 
     print "Running sanity checks..."
-    t1 = sgd(quad, 0.5, 0.01, 1000, PRINT_EVERY=100)
+    t1 = sgd(quad, np.array([0.5]), 0.01, 1000, PRINT_EVERY=100)
     print "test 1 result:", t1
-    assert abs(t1) <= 1e-6
+    assert (abs(t1) <= 1e-6).all
 
-    t2 = sgd(quad, 0.0, 0.01, 1000, PRINT_EVERY=100)
+    t2 = sgd(quad, np.array([0.0]), 0.01, 1000, PRINT_EVERY=100)
     print "test 2 result:", t2
-    assert abs(t2) <= 1e-6
+    assert (abs(t2) <= 1e-6).all
 
-    t3 = sgd(quad, -1.5, 0.01, 1000, PRINT_EVERY=100)
+    t3 = sgd(quad, np.array([-1.5]), 0.01, 1000, PRINT_EVERY=100)
     print "test 3 result:", t3
-    assert abs(t3) <= 1e-6
+    assert (abs(t3) <= 1e-6).all
 
     print ""
 
@@ -134,7 +135,22 @@ def your_sanity_checks():
     """
     print "Running your sanity checks..."
     ### YOUR CODE HERE
-    #raise NotImplementedError
+    quad = lambda x: (np.sum(x ** 2), x * 2)
+
+    print "Running sanity checks..."
+    t1 = sgd(quad, np.array([0.5, 0.5, 0.6]), 0.01, 1000, PRINT_EVERY=100)
+    print "test 1 result:", t1
+    assert (abs(t1) <= 1e-6).all
+
+    t2 = sgd(quad, np.array([0.0, 0.01, 0.5 ,0.8]), 0.01, 1000, PRINT_EVERY=100)
+    print "test 2 result:", t2
+    assert (abs(t2) <= 1e-6).all
+
+    t3 = sgd(quad, np.array([-1.5, 0.5, 0.7]), 0.01, 1000, PRINT_EVERY=100)
+    print "test 3 result:", t3
+    assert (abs(t3) <= 1e-6).all
+
+    print ""
     ### END YOUR CODE
 
 
