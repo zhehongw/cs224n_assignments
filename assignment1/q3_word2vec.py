@@ -150,11 +150,11 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     cost -- the cost function value for the skip-gram model
     grad -- the gradient with respect to the word vectors
     """
-
+    assert len(contextWords) == 2*C
     cost = 0.0
     gradIn = np.zeros(inputVectors.shape)
     gradOut = np.zeros(outputVectors.shape)
-
+    
     ### YOUR CODE HERE
     for x in contextWords:
         tempCost, tempGradIn, tempGradOut = word2vecCostAndGradient(inputVectors[tokens[currentWord]], tokens[x], outputVectors, dataset)
@@ -186,7 +186,10 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     v = np.sum(inputVectors[[tokens[x] for x in contextWords], :], axis=0)
     assert v.shape[0] == inputVectors.shape[1]
     cost, tempGradIn, gradOut = word2vecCostAndGradient(v, tokens[currentWord], outputVectors, dataset)
-    gradIn[[tokens[x] for x in contextWords], :] = tempGradIn
+
+    #gradIn[[tokens[x] for x in contextWords], :] = tempGradIn / (2 * C) #this is incorrect, because the same word may occur more than once in the same context, need to add multiple time
+    for x in contextWords:
+        gradIn[tokens[x], :] += tempGradIn
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -204,8 +207,7 @@ def word2vec_sgd_wrapper(word2vecModel, tokens, wordVectors, dataset, C,
     N = wordVectors.shape[0]
     inputVectors = wordVectors[:N/2,:]
     outputVectors = wordVectors[N/2:,:]
-    for i in xrange(1):
-    #for i in xrange(batchsize):
+    for i in xrange(batchsize):
         C1 = random.randint(1,C)
         centerword, context = dataset.getRandomContext(C1)
 

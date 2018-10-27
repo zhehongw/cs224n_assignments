@@ -42,12 +42,12 @@ def forward_backward_prop(X, labels, params, dimensions):
     ### YOUR CODE HERE: forward propagation
     labels = labels.astype(int)
     reg = 1e-3
-    #step_size = 1e0
     num_example = X.shape[0]
     z1 = X.dot(W1)+b1
     a1 = sigmoid(z1)
     z2 = a1.dot(W2)+b2
     y = softmax(z2)
+    assert y.shape == labels.shape
     correct_prob = -np.log(y[labels == 1])
     data_loss = np.sum(correct_prob) / num_example 
     reg_loss = 0.5*reg*np.sum(W1*W1) + 0.5*reg*np.sum(W2*W2)
@@ -59,7 +59,9 @@ def forward_backward_prop(X, labels, params, dimensions):
     dz2 -= labels   #labels are one hot code, so just minus is good
     dz2 = dz2 / num_example
     dw2 = a1.T.dot(dz2)
+    assert dw2.shape == W2.shape
     db2 = np.sum(dz2, axis=0, keepdims=True)
+    assert db2.shape == b2.shape 
     gradb2 = db2
     da1 = dz2.dot(W2.T)
     dz1 = sigmoid_grad(a1)*da1

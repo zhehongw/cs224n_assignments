@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import numpy as np
 
 
@@ -30,11 +31,9 @@ def softmax(x):
     if len(x.shape) > 1:
         # Matrix
         ### YOUR CODE HERE
-        print np.max(x, axis=1)[:,np.newaxis]
         x = x - np.max(x, axis=1)[:,np.newaxis]
         ex = np.exp(x)
         sum_ex = np.sum(ex, axis=1)[:,np.newaxis]
-        print sum_ex
         x = ex/sum_ex
         ### END YOUR CODE
     else:
