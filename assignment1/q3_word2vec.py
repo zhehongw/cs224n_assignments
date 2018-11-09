@@ -150,7 +150,7 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     cost -- the cost function value for the skip-gram model
     grad -- the gradient with respect to the word vectors
     """
-    assert len(contextWords) == 2*C
+    #assert len(contextWords) == 2*C
     cost = 0.0
     gradIn = np.zeros(inputVectors.shape)
     gradOut = np.zeros(outputVectors.shape)
