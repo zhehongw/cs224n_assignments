@@ -61,7 +61,8 @@ def naiveSoftmaxLossAndGradient(
     y[outsideWordIdx] = 1
     y_hat = softmax(outsideVectors.dot(centerWordVec))
     loss = -np.log(y_hat[outsideWordIdx])
-    gradCenterVec = outsideVectors.dot(y_hat - y)
+    gradCenterVec = (y_hat - y).dot(outsideVectors)
+    #gradCenterVec = outsideVectors.dot(y_hat - y)
     assert (gradCenterVec.shape == centerWordVec.shape)
     gradOutsideVecs = np.outer((y_hat - y), centerWordVec)
     assert (gradOutsideVecs.shape == outsideVectors.shape)
@@ -107,17 +108,17 @@ def negSamplingLossAndGradient(
     # wish to match the autograder and receive points!
     negSampleWordIndices = getNegativeSamples(outsideWordIdx, dataset, K)
     indices = [outsideWordIdx] + negSampleWordIndices
-
     ### YOUR CODE HERE
 
     ### Please use your implementation of sigmoid in here.
     loss = -np.log(sigmoid(centerWordVec.dot(outsideVectors[indices[0], :]))) - np.sum(np.log(sigmoid(-outsideVectors[indices[1:], :].dot(centerWordVec))))
-    assert (loss.shape == 1)
-    gradCenterVec = (sigmoid(centerWordVec.dot(outsideVectors[indices[0], :] - 1))) * outsideVectors[indices[0], :] + (1 - sigmoid(-outsideVectors[indices[1:], :].dot(centerWordVec))).dot(outsideVectors[indices[1:], :])
+    gradCenterVec = (sigmoid(centerWordVec.dot(outsideVectors[indices[0], :])) - 1) * outsideVectors[indices[0], :] + (1 - sigmoid(-outsideVectors[indices[1:], :].dot(centerWordVec))).dot(outsideVectors[indices[1:], :])
     assert (gradCenterVec.shape == centerWordVec.shape)
     gradOutsideVecs = np.zeros(outsideVectors.shape)
-    gradOutsideVecs[indices[0], :] = (sigmoid(centerWordVec.dot(outsideVectors[indices[0], :] - 1))) * centerWordVec
-    gradOutsideVecs[indices[1:], :] = np.outer((1 - sigmoid(-outsideVectors[indices[1:], :].dot(centerWordVec))), centerWordVec)
+    gradOutsideVecs[indices[0], :] = (sigmoid(centerWordVec.dot(outsideVectors[indices[0], :])) - 1) * centerWordVec
+    #remember to accumulate the gradient for duplicate negative samples
+    for idx in indices[1:]:
+        gradOutsideVecs[idx, :] += (1 - sigmoid(-outsideVectors[idx, :].dot(centerWordVec))) * centerWordVec
     assert (gradOutsideVecs.shape == outsideVectors.shape)
     ### END YOUR CODE
 
@@ -166,7 +167,7 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
                 centerWordVectors[centerIdx, :],word2Ind[word], outsideVectors, dataset)    
         loss += d_loss
         gradCenterVecs[centerIdx, :] += gradCenter
-        gradOutsideVecs += gradOut
+        gradOutsideVectors += gradOut
     ### END YOUR CODE
 
     return loss, gradCenterVecs, gradOutsideVectors
