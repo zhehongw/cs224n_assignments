@@ -73,14 +73,14 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
-        self.encoder = nn.LSTM(input_size = embed_size, hidden_size = self.hidden_size, bias = True, bidirection = True)
-        self.decoder = nn.LSTM(input_size = embed_size, hideen_size = self.hidden_size, bias = True)
+        self.encoder = nn.LSTM(input_size = embed_size, hidden_size = self.hidden_size, bias = True, bidirectional = True)
+        self.decoder = nn.LSTM(input_size = embed_size, hidden_size = self.hidden_size, bias = True)
         self.h_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
         self.c_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
         self.att_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
         self.combined_output_projection = nn.Linear(in_features = embed_size * 3, out_features = self.hidden_size, bias = False)
         self.target_vocab_projection = nn.Linear(in_features = self.hidden_size, out_features = len(self.vocab.tgt), bias = False)
-        self.dropout = nn.Dropou(p = self.dropout_rate)
+        self.dropout = nn.Dropout(p = self.dropout_rate)
 
         ### END YOUR CODE
 
@@ -147,7 +147,7 @@ class NMT(nn.Module):
         ###     2. Compute `enc_hiddens`, `last_hidden`, `last_cell` by applying the encoder to `X`.
         ###         - Before you can apply the encoder, you need to apply the `pack_padded_sequence` function to X.
         ###         - After you apply the encoder, you need to apply the `pad_packed_sequence` function to enc_hiddens.
-        ###         - Note that the shape of the tensor returned by the encoder is (src_len b, h*2) and we want to
+        ###         - Note that the shape of the tensor returned by the encoder is (src_len, b, h*2) and we want to
         ###           return a tensor of shape (b, src_len, h*2) as `enc_hiddens`.
         ###     3. Compute `dec_init_state` = (init_decoder_hidden, init_decoder_cell):
         ###         - `init_decoder_hidden`:
@@ -170,11 +170,19 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
-
-
+        X = self.model_embeddings.source(source_padded)
+        #all sentences are paded to the same length first, but if they are feeded directly to the network,
+        #the translated sentences will also have padded terms, which is unwanted,
+        #with this pack_padded_sequence function, the paded symbols are not passed to the network
+        X = nn.utils.rnn.pack_padded_sequence(X, source_lengths)
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
+        enc_hiddens = nn.utils.rnn.pad_packed_sequence(enc_hiddens, batch_first = True)
+        init_decoder_hidden = self.h_projection(torch.cat((last_hidden[0, :, :], last_hidden[1, :, :]), 1))
+        init_decoder_cell = self.c_projection(torch.cat((last_cell[0, :, :], last_cell[1, :, :]), 1))
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
         ### END YOUR CODE
 
-        return enc_hiddens, dec_init_state
+        return enc_hiddens[0], dec_init_state
 
 
     def decode(self, enc_hiddens: torch.Tensor, enc_masks: torch.Tensor,
