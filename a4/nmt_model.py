@@ -74,7 +74,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
 
         self.encoder = nn.LSTM(input_size = embed_size, hidden_size = self.hidden_size, bias = True, bidirectional = True)
-        self.decoder = nn.LSTM(input_size = embed_size, hidden_size = self.hidden_size, bias = True)
+        self.decoder = nn.LSTM(input_size = embed_size + self.hidden_size, hidden_size = self.hidden_size, bias = True)
         self.h_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
         self.c_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
         self.att_projection = nn.Linear(in_features = embed_size * 2, out_features = self.hidden_size, bias = False)
@@ -227,7 +227,7 @@ class NMT(nn.Module):
         ###             - Construct Ybar_t by concatenating Y_t with o_prev.
         ###             - Use the step function to compute the the Decoder's next (cell, state) values
         ###               as well as the new combined output o_t.
-        ###             - Append o_t to combined_outputs
+        ###             - Append o_t to combined_outputs, get o_t of each time step
         ###             - Update o_prev to the new o_t.
         ###     4. Use torch.stack to convert combined_outputs from a list length tgt_len of
         ###         tensors shape (b, h), to a single tensor shape (tgt_len, b, h)
@@ -248,8 +248,15 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Stacking:
         ###         https://pytorch.org/docs/stable/torch.html#torch.stack
-
-
+        enc_hiddens_proj = self.att_projection(enc_hiddens)
+        Y = self.model_embeddings.target(target_padded)
+        for Y_t in torch.split(Y, 1, 0):
+            Y_t = torch.squeeze(Y_t, 0)
+            Ybar_t = torch.cat((Y_t, o_prev), 1)
+            dec_state, o_t, e_t = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
+            combined_outputs.append(o_t)
+            o_prev = o_t
+        combined_outputs = torch.stack(combined_outputs, 0)
         ### END YOUR CODE
 
         return combined_outputs
@@ -306,7 +313,13 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.unsqueeze
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
-
+        Ybar_t = torch.unsqueeze(Ybar_t, 0) #input to LSTM layer should be of 3 dimension [seq, batch, embedding size]
+        dec_state = (torch.unsqueeze(dec_state[0], 0), torch.unsqueeze(dec_state[1], 0))
+        _, dec_state  = self.decoder(Ybar_t, dec_state)
+        dec_state = (torch.squeeze(dec_state[0], 0), torch.squeeze(dec_state[1], 0))
+        dec_hidden = torch.unsqueeze(dec_state[0], 2)
+        e_t = torch.squeeze(torch.bmm(enc_hiddens_proj, dec_hidden), 2)
+        dec_hidden = dec_state[0]
 
         ### END YOUR CODE
 
@@ -341,8 +354,11 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/torch.html#torch.tanh
-
-
+        alpha_t = torch.unsqueeze(nn.functional.softmax(e_t, dim = 1), 1)
+        a_t = torch.squeeze(torch.bmm(alpha_t, enc_hiddens), 1)
+        U_t = torch.cat((a_t, dec_hidden), 1)
+        V_t = self.combined_output_projection(U_t)
+        O_t = self.dropout(torch.tanh(V_t))
         ### END YOUR CODE
 
         combined_output = O_t
