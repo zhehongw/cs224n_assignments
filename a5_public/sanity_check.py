@@ -7,11 +7,13 @@ sanity_check.py: sanity checks for assignment 5
 Usage:
     sanity_check.py 1e
     sanity_check.py 1f
+    sanity_check.py 1g
     sanity_check.py 1j
     sanity_check.py 2a
     sanity_check.py 2b
     sanity_check.py 2c
     sanity_check.py 2d
+    sanity_check.py highway
 """
 import json
 import math
@@ -26,7 +28,7 @@ from typing import List, Tuple, Dict, Set, Union
 from tqdm import tqdm
 from utils import pad_sents_char, read_corpus, batch_iter
 from vocab import Vocab, VocabEntry
-
+from highway import Highway
 from char_decoder import CharDecoder
 from nmt_model import NMT
 
@@ -34,7 +36,7 @@ from nmt_model import NMT
 import torch
 import torch.nn as nn
 import torch.nn.utils
-
+import torch.nn.functional as F
 #----------
 # CONSTANTS
 #----------
@@ -95,6 +97,54 @@ def question_1f_sanity_check():
     print("Sanity Check Passed for Question 1f: Padding!")
     print("-"*80)
 
+
+def question_1g_sanity_check():
+    """ Sanity check for to_input_tensor_char() function. 
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1g: Building the input tensor")
+    print ("-"*80)
+    vocab = VocabEntry()
+
+    print("Running test on a list of sentences")
+    sentences = [['Human:', 'What', 'do', 'we', 'want?'], ['Computer:', 'Natural', 'language', 'processing!'], ['Human:', 'When', 'do', 'we', 'want', 'it?'], ['Computer:', 'When', 'do', 'we', 'want', 'what?']]
+    device = torch.device('cpu')
+    padded_tensor = vocab.to_input_tensor_char(sentences, device)
+    gold_padded_sentences = torch.load('./sanity_check_en_es_data/gold_padded_sentences.pkl')
+    gold_padded_tensor = torch.tensor(gold_padded_sentences, device = device).permute(1, 0, 2)
+    assert padded_tensor.size() == gold_padded_tensor.size(), "Sentence padding is incorrect: it should be:\n {} but is:\n{}".format(gold_padded_sentences, padded_sentences)
+
+    print("Sanity Check Passed for Question 1g: Building the input tensor!")
+    print("-"*80)
+
+def highway_sanity_check():
+    """ Sanity check for highway network function. 
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1h: Highway network implementation")
+    print ("-"*80)
+    #compute the network manually
+    input = torch.rand(BATCH_SIZE, EMBED_SIZE)
+    proj_w = torch.rand(EMBED_SIZE, EMBED_SIZE)
+    proj_b = torch.rand(EMBED_SIZE)
+    gate_w = torch.rand(EMBED_SIZE, EMBED_SIZE)
+    gate_b = torch.rand(EMBED_SIZE)
+    x_proj = F.relu(torch.mm(proj_w, input.transpose(0, 1)) + proj_b.repeat(BATCH_SIZE, 1).transpose(1, 0))
+    x_gate = torch.sigmoid(torch.mm(gate_w, input.transpose(0, 1)) + gate_b.repeat(BATCH_SIZE,1).transpose(1, 0))
+    x_highway = x_gate * x_proj + (1 - x_gate) * x_proj
+    x_highway = x_highway.transpose(1, 0) 
+    
+    hw = Highway(EMBED_SIZE)
+    #initialize the weights of the network the same as the the manual one
+    hw.proj_layer.weight = torch.nn.Parameter(proj_w)
+    hw.proj_layer.bias = torch.nn.Parameter(proj_b)
+    hw.gate_layer.weight = torch.nn.Parameter(gate_w)
+    hw.gate_layer.bias = torch.nn.Parameter(gate_b)
+    hw.eval()
+    output = hw(input)
+    assert torch.equal(output, x_highway), "Output size is incorrect: it should be:\n {} but is:\n{}".format(input.size(), output.size())
+    print("Sanity Check Passed for Question 1h: Highway network implementation!")
+    print("-"*80)
 
 def question_1j_sanity_check(model):
 	""" Sanity check for model_embeddings.py 
@@ -183,8 +233,8 @@ def main():
     args = docopt(__doc__)
 
     # Check Python & PyTorch Versions
-    assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5"
-    assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
+    #assert (sys.version_info >= (3, 5)), "Please update your installation of Python to version >= 3.5"
+    #assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
 
     # Seed the Random Number Generators
     seed = 1234
@@ -213,6 +263,8 @@ def main():
         question_1e_sanity_check()
     elif args['1f']:
         question_1f_sanity_check()
+    elif args['1g']:
+        question_1g_sanity_check()
     elif args['1j']:
         question_1j_sanity_check(model)
     elif args['2a']:
@@ -223,6 +275,8 @@ def main():
         question_2c_sanity_check(decoder)
     elif args['2d']:
         question_2d_sanity_check(decoder)
+    elif args['highway']:
+        highway_sanity_check()
     else:
         raise RuntimeError('invalid run mode')
 
