@@ -28,6 +28,7 @@ class CNN(nn.Module):
     def forward(self, input):
         x_conv = F.relu(self.conv_layer(input))
         x_conv_out = self.max_pool_layer(x_conv)
+        #squeeze is needed to remove the last dimension of size one
         return torch.squeeze(x_conv_out)
 
 ### END YOUR CODE
