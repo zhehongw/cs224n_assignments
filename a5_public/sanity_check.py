@@ -14,6 +14,7 @@ Usage:
     sanity_check.py 2c
     sanity_check.py 2d
     sanity_check.py highway
+    sanity_check.py cnn
 """
 import json
 import math
@@ -31,6 +32,7 @@ from vocab import Vocab, VocabEntry
 from highway import Highway
 from char_decoder import CharDecoder
 from nmt_model import NMT
+from cnn import CNN
 
 
 import torch
@@ -117,8 +119,25 @@ def question_1g_sanity_check():
     print("Sanity Check Passed for Question 1g: Building the input tensor!")
     print("-"*80)
 
-def highway_sanity_check():
-    """ Sanity check for highway network function. 
+def cnn_sanity_check():
+    """ Sanity check for CNN network function. 
+    """
+    print ("-"*80)
+    print("Running Sanity Check for Question 1i: CNN network implementation")
+    print ("-"*80)
+    WORD_LEN = 10
+    CHAR_EMBED = 4
+    KERNEL_SIZE = 3
+    WORD_EMBED = 6
+    input = torch.rand(BATCH_SIZE, CHAR_EMBED, WORD_LEN)
+    cnn = CNN(WORD_LEN, CHAR_EMBED, KERNEL_SIZE, WORD_EMBED)
+    output = cnn(input)
+    assert output.size() == torch.rand(BATCH_SIZE, WORD_EMBED).size(), "Output size is incorrect: it should be:\n {} but is:\n{}".format(torch.rand(BATCH_SIZE, WORD_EMBED).size(), output.size())
+    print("Sanity Check Passed for Question 1i: CNN network implementation!")
+    print("-"*80)
+
+def high_sanity_check():
+    """ Sanity check for Highway network function. 
     """
     print ("-"*80)
     print("Running Sanity Check for Question 1h: Highway network implementation")
@@ -143,7 +162,7 @@ def highway_sanity_check():
     hw.eval()
     output = hw(input)
     assert torch.equal(output, x_highway), "Output size is incorrect: it should be:\n {} but is:\n{}".format(input.size(), output.size())
-    print("Sanity Check Passed for Question 1h: Highway network implementation!")
+    print("Sanity Check Passed for Question 1h: High network implementation!")
     print("-"*80)
 
 def question_1j_sanity_check(model):
@@ -277,6 +296,8 @@ def main():
         question_2d_sanity_check(decoder)
     elif args['highway']:
         highway_sanity_check()
+    elif args['cnn']:
+        cnn_sanity_check()
     else:
         raise RuntimeError('invalid run mode')
 
