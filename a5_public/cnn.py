@@ -14,7 +14,7 @@ class CNN(nn.Module):
     """
     CNN class used for word embedding
     """
-    def __init__(self, m_word, e_char, kernel_size, e_word):
+    def __init__(self, m_word, e_char, e_word, kernel_size = 5):
         """
         m_word: input layer max word lenth 
         e_char: input layer character embedding length
