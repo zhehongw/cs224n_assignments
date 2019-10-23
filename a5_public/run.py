@@ -142,7 +142,6 @@ def train(args: Dict):
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
     print('use device: %s' % device, file=sys.stderr)
-
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args['--lr']))
 

@@ -68,7 +68,7 @@ class ModelEmbeddings(nn.Module):
         ### YOUR CODE HERE for part 1j
         x_emb = self.char_embed_layer(input)
         x_emb = x_emb.permute(0, 1, 3, 2)
-        x_word_emb = torch.zeros(x_emb.size()[0], x_emb.size()[1], self.embed_size)
+        x_word_emb = torch.zeros(x_emb.size()[0], x_emb.size()[1], self.embed_size, device = input.device) #seems not able to access self.device, so have to use input.device at here, not sure why
         for i in range(x_emb.size()[0]):
             x_conv_out = self.cnn_layer(x_emb[i, ...])
             x_word_emb[i, ...] = self.highway_layer(x_conv_out)
