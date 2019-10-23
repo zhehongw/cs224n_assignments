@@ -43,11 +43,11 @@ class ModelEmbeddings(nn.Module):
         e_char = 50 #character embedding size
         max_word_length = 21
         dropout_rate = 0.3
-        self.e_word = embed_size
+        self.embed_size = embed_size
         pad_token_idx = vocab.char2id['<pad>']
         self.char_embed_layer = nn.Embedding(len(vocab.char2id), e_char, padding_idx = pad_token_idx)
-        self.cnn_layer = CNN(max_word_length, e_char, self.e_word)
-        self.highway_layer = Highway(self.e_word, dropout_rate)
+        self.cnn_layer = CNN(max_word_length, e_char, self.embed_size)
+        self.highway_layer = Highway(self.embed_size, dropout_rate)
 
         ### END YOUR CODE
 
@@ -68,7 +68,7 @@ class ModelEmbeddings(nn.Module):
         ### YOUR CODE HERE for part 1j
         x_emb = self.char_embed_layer(input)
         x_emb = x_emb.permute(0, 1, 3, 2)
-        x_word_emb = torch.zeros(x_emb.size()[0], x_emb.size()[1], self.e_word)
+        x_word_emb = torch.zeros(x_emb.size()[0], x_emb.size()[1], self.embed_size)
         for i in range(x_emb.size()[0]):
             x_conv_out = self.cnn_layer(x_emb[i, ...])
             x_word_emb[i, ...] = self.highway_layer(x_conv_out)
