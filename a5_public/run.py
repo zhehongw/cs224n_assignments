@@ -144,7 +144,6 @@ def train(args: Dict):
     print('use device: %s' % device, file=sys.stderr)
 
     model = model.to(device)
-
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args['--lr']))
 
     num_trial = 0
