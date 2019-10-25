@@ -27,10 +27,10 @@ class CharDecoder(nn.Module):
         ### Hint: - Use target_vocab.char2id to access the character vocabulary for the target language.
         ###       - Set the padding_idx argument of the embedding matrix.
         ###       - Create a new Embedding layer. Do not reuse embeddings created in Part 1 of this assignment.
+        super(CharDecoder, self).__init__()
         self.hidden_size = hidden_size
         self.char_embedding_size = char_embedding_size
         self.target_vocab = target_vocab
-        super(CharDecoder, self).__init__()
         self.charDecoder = nn.LSTM(self.char_embedding_size, self.hidden_size)
         self.char_output_projection = nn.Linear(self.hidden_size, len(self.target_vocab.char2id))
         self.decoderCharEmb = nn.Embedding(len(self.target_vocab.char2id), self.char_embedding_size, padding_idx = self.target_vocab.char2id['<pad>'])
@@ -41,7 +41,7 @@ class CharDecoder(nn.Module):
     def forward(self, input, dec_hidden=None):
         """ Forward pass of character decoder.
 
-        @param input: tensor of integers, shape (length, batch)
+        @param input: shape (length, batch, character embedding size)
         @param dec_hidden: internal state of the LSTM before reading the input characters. A tuple of two tensors of shape (1, batch, hidden_size)
 
         @returns scores: called s_t in the PDF, shape (length, batch, self.vocab_size)
@@ -49,7 +49,7 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        char_decode_output, local_h, local_c = self.charDecoder(X, dec_hidden)
+        char_decode_output, (local_h, local_c) = self.charDecoder(input, dec_hidden)
         scores = self.char_output_projection(char_decode_output)
         return scores, (local_h, local_c)
         
