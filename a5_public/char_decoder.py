@@ -49,7 +49,7 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        char_decode_output, local_h, local_c = self.charDecoder(input,  dec_hidden)
+        char_decode_output, local_h, local_c = self.charDecoder(X, dec_hidden)
         scores = self.char_output_projection(char_decode_output)
         return scores, (local_h, local_c)
         
