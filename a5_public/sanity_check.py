@@ -206,8 +206,10 @@ def question_2b_sanity_check(decoder, char_vocab):
     print("Running Sanity Check for Question 2b: CharDecoder.forward()")
     print ("-"*80)
     sequence_length = 4
-    inpt = torch.zeros(sequence_length, BATCH_SIZE, dtype=torch.long)
+    inpt = torch.zeros(sequence_length, BATCH_SIZE, EMBED_SIZE, dtype=torch.long)
+    #dec_hidden = (torch.zeros(1, BATCH_SIZE, decoder.hidden_size, dtype=torch.long), torch.zeros(1, BATCH_SIZE, decoder.hidden_size, dtype=torch.long))
     logits, (dec_hidden1, dec_hidden2) = decoder.forward(inpt)
+    #logits, (dec_hidden1, dec_hidden2) = decoder.forward(inpt, dec_hidden)
     logits_expected_size = [sequence_length, BATCH_SIZE, len(char_vocab.char2id)]
     dec_hidden_expected_size = [1, BATCH_SIZE, HIDDEN_SIZE]
     assert(list(logits.size()) == logits_expected_size), "Logits shape is incorrect:\n it should be {} but is:\n{}".format(logits_expected_size, list(logits.size()))
