@@ -96,6 +96,9 @@ def question_1f_sanity_check():
     gold_padded_sentences = torch.load('./sanity_check_en_es_data/gold_padded_sentences.pkl')
     assert padded_sentences == gold_padded_sentences, "Sentence padding is incorrect: it should be:\n {} but is:\n{}".format(gold_padded_sentences, padded_sentences)
 
+    test_list = [[[4]*33]]
+    padded_sent = pad_sents_char(test_list, 0)
+    assert len(padded_sent[0][0]) == 21
     print("Sanity Check Passed for Question 1f: Padding!")
     print("-"*80)
 

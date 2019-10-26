@@ -167,6 +167,10 @@ class VocabEntry(object):
         ###     Connect `words2charindices()` and `pad_sents_char()` which you've defined in 
         ###     previous parts
         sents_padded = pad_sents_char(self.words2charindices(sents), self.char2id['<pad>'])
+        for sent in sents_padded:
+            word_len = []
+            for word in sent:
+                word_len += [len(word)]
         sents_var = torch.tensor(sents_padded, device = device).permute(1, 0, 2)
         return sents_var
         ### END YOUR CODE

@@ -45,16 +45,20 @@ def pad_sents_char(sents, char_pad_token):
     for sent in sents:
         if len(sent) > max_sent_len:
             max_sent_len = len(sent)
+    #in python, a list is not able to be modified in a for loop, 
+    #because before for loop starts a new iterator is created, so
+    #the modification is actually done to the new iterator
+    #thus the list can only be read
     for sent in sents:
-        sent += [[char_pad_token]] * (max_sent_len - len(sent))
+        sent_fixed = []
         for word in sent:
             if len(word) > max_word_length:
-                word = word[0 : (max_word_length - 1)]
+                word = word[0 : max_word_length]
             else:
-                word += ([char_pad_token] * (max_word_length - len(word)))
-        sents_padded.append(sent)
+                word = word + ([char_pad_token] * (max_word_length - len(word)))
+            sent_fixed.append(word)
+        sents_padded.append(sent_fixed + ([[char_pad_token ] * max_word_length] * (max_sent_len - len(sent))))
     ### END YOUR CODE
-
     return sents_padded
 
 

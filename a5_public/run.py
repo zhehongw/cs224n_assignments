@@ -157,15 +157,12 @@ def train(args: Dict):
 
         for src_sents, tgt_sents in batch_iter(train_data, batch_size=train_batch_size, shuffle=True):
             train_iter += 1
-
             optimizer.zero_grad()
 
             batch_size = len(src_sents)
-
             example_losses = -model(src_sents, tgt_sents) # (batch_size,)
             batch_loss = example_losses.sum()
             loss = batch_loss / batch_size
-
             loss.backward()
 
             # clip gradient
