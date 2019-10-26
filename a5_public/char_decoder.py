@@ -41,7 +41,7 @@ class CharDecoder(nn.Module):
     def forward(self, input, dec_hidden=None):
         """ Forward pass of character decoder.
 
-        @param input: shape (length, batch, character embedding size)
+        @param input: shape (length, batch)
         @param dec_hidden: internal state of the LSTM before reading the input characters. A tuple of two tensors of shape (1, batch, hidden_size)
 
         @returns scores: called s_t in the PDF, shape (length, batch, self.vocab_size)
@@ -49,7 +49,8 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        char_decode_output, (local_h, local_c) = self.charDecoder(input, dec_hidden)
+        char_embedding = self.decoderCharEmb(input)
+        char_decode_output, (local_h, local_c) = self.charDecoder(char_embedding, dec_hidden)
         scores = self.char_output_projection(char_decode_output)
         return scores, (local_h, local_c)
         
@@ -69,8 +70,10 @@ class CharDecoder(nn.Module):
         ###
         ### Hint: - Make sure padding characters do not contribute to the cross-entropy loss.
         ###       - char_sequence corresponds to the sequence x_1 ... x_{n+1} from the handout (e.g., <START>,m,u,s,i,c,<END>).
-
-
+        scores, _ = self.forward(char_sequence[:-1, :], dec_hidden)
+        loss = nn.CrossEntropyLoss(ignore_index = self.target_vocab.char2id['<pad>'])
+        output = loss(scores.permute([1, 2, 0]), char_sequence[1:, :].permute([1, 0]))
+        return output
         ### END YOUR CODE
 
     def decode_greedy(self, initialStates, device, max_length=21):
@@ -90,7 +93,26 @@ class CharDecoder(nn.Module):
         ###      - Use torch.tensor(..., device=device) to turn a list of character indices into a tensor.
         ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character '{' for <START> and '}' for <END>.
         ###        Their indices are self.target_vocab.start_of_word and self.target_vocab.end_of_word, respectively.
-        
-        
+        output_word_idx = torch.tensor([], device = device, dtype = torch.long)
+        current_char = self.decoderCharEmb(torch.tensor([self.target_vocab.start_of_word] * initialStates[0].size()[1], device = device).unsqueeze(0))
+        (h_t, c_t) = initialStates
+        for i in range(max_length):
+            _, (h_t, c_t) = self.charDecoder(current_char, (h_t, c_t))
+            s_t = self.char_output_projection(h_t)
+            p_t = nn.functional.softmax(s_t, dim = 2)
+            _, current_char_idx = torch.max(p_t, dim = 2)
+            output_word_idx = torch.cat((output_word_idx, current_char_idx), dim = 0)
+            current_char = self.decoderCharEmb(current_char_idx)
+        decodedWords = []
+        end_of_word = self.target_vocab.id2char[self.target_vocab.end_of_word]
+        for i in range(output_word_idx.size()[1]):
+            word = ''
+            for j in range(output_word_idx.size()[0]):
+                char = self.target_vocab.id2char[torch.Tensor.item(output_word_idx[j, i])]
+                if  char != end_of_word:
+                    word += char
+                else:
+                    break
+            decodedWords += [word]
+        return decodedWords
         ### END YOUR CODE
-

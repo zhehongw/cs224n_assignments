@@ -206,7 +206,7 @@ def question_2b_sanity_check(decoder, char_vocab):
     print("Running Sanity Check for Question 2b: CharDecoder.forward()")
     print ("-"*80)
     sequence_length = 4
-    inpt = torch.zeros(sequence_length, BATCH_SIZE, EMBED_SIZE) #input should be float type not long
+    inpt = torch.zeros(sequence_length, BATCH_SIZE, dtype = torch.long)
     logits, (dec_hidden1, dec_hidden2) = decoder.forward(inpt)
     logits_expected_size = [sequence_length, BATCH_SIZE, len(char_vocab.char2id)]
     dec_hidden_expected_size = [1, BATCH_SIZE, HIDDEN_SIZE]
@@ -224,7 +224,7 @@ def question_2c_sanity_check(decoder):
     print("Running Sanity Check for Question 2c: CharDecoder.train_forward()")
     print ("-"*80)
     sequence_length = 4
-    inpt = torch.zeros(sequence_length, BATCH_SIZE, dtype=torch.long)
+    inpt = torch.ones(sequence_length, BATCH_SIZE, dtype=torch.long).random_(len(decoder.target_vocab.char2id))
     loss = decoder.train_forward(inpt)
     assert(list(loss.size()) == []), "Loss should be a scalar but its shape is: {}".format(list(loss.size()))
     print("Sanity Check Passed for Question 2c: CharDecoder.train_forward()!")
